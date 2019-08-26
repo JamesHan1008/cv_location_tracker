@@ -12,13 +12,15 @@ import mrcnn.model as modellib
 from mrcnn import visualize
 import coco
 
-from class_names import class_names
-
+from classes import classes
+from movement import filter_detections
 
 ROOT_DIR = os.path.dirname(os.path.realpath(__file__))
 IMAGE_DIR = os.path.join(ROOT_DIR, "images")
 TRAIN_DIR = os.path.join(ROOT_DIR, "train")
 MODEL_PATH = os.path.join(ROOT_DIR, "models", "mask_rcnn_coco.h5")
+
+debugging = True
 
 
 class InferenceConfig(coco.CocoConfig):
@@ -38,20 +40,30 @@ model.load_weights(MODEL_PATH, by_name=True)
 
 # Read from a video
 video = cv2.VideoCapture("videos/driving_short.mp4")
+frame_count = 0
+prev_detections = None
+
 while video.isOpened():
     _, frame = video.read()  # X by Y by 3 (RGB)
-    results = model.detect([frame], verbose=1)[0]
+    curr_detections = model.detect([frame], verbose=1)[0]
 
-    print(results)
-    visualize.display_instances(
-        frame,
-        results['rois'],
-        results['masks'],
-        results['class_ids'],
-        class_names,
-        results['scores'],
-    )
-    break
+    curr_detections = filter_detections(curr_detections)
+
+    print(curr_detections)
+
+    if debugging:
+        visualize.display_instances(
+            frame,
+            curr_detections['rois'],
+            curr_detections['masks'],
+            curr_detections['class_ids'],
+            list(classes.keys()),
+            curr_detections['scores'],
+        )
+
+    frame_count += 1
+    if frame_count >= 2:
+        break
 
 video.release()
 cv2.destroyAllWindows()

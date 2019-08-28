@@ -13,7 +13,7 @@ from mrcnn import visualize
 import coco
 
 from classes import classes
-from movement import filter_detections
+from util.detections import filter_detections, match_detections
 
 ROOT_DIR = os.path.dirname(os.path.realpath(__file__))
 IMAGE_DIR = os.path.join(ROOT_DIR, "images")
@@ -49,7 +49,11 @@ while video.isOpened():
 
     curr_detections = filter_detections(curr_detections)
 
-    print(curr_detections)
+    if prev_detections is not None:
+        matched_detections = match_detections(prev_detections, curr_detections)
+        print(matched_detections)
+
+    # TODO: calculate distance and direction traveled
 
     if debugging:
         visualize.display_instances(
@@ -61,6 +65,7 @@ while video.isOpened():
             curr_detections['scores'],
         )
 
+    prev_detections = curr_detections
     frame_count += 1
     if frame_count >= 2:
         break

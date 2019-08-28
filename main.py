@@ -12,8 +12,9 @@ import mrcnn.model as modellib
 from mrcnn import visualize
 import coco
 
-from classes import classes
+from configs.classes import classes
 from util.detections import filter_detections, match_detections
+from util.movement import calculate_movement
 
 ROOT_DIR = os.path.dirname(os.path.realpath(__file__))
 IMAGE_DIR = os.path.join(ROOT_DIR, "images")
@@ -53,7 +54,8 @@ while video.isOpened():
         matched_detections = match_detections(prev_detections, curr_detections)
         print(matched_detections)
 
-    # TODO: calculate distance and direction traveled
+        distance, direction = calculate_movement(matched_detections, camera_id="example", image_width=frame.shape[1])
+        print(distance, direction)
 
     if debugging:
         visualize.display_instances(

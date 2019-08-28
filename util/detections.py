@@ -2,9 +2,9 @@ from typing import Dict, List
 
 import numpy as np
 
-from classes import classes, class_lookup
+from configs.classes import classes, class_lookup
 
-MIN_OVERLAP_RATIO = 0.8
+MIN_OVERLAP_RATIO = 0.
 
 
 def filter_detections(detections: Dict[str, np.ndarray]) -> Dict[str, np.ndarray]:
@@ -13,8 +13,8 @@ def filter_detections(detections: Dict[str, np.ndarray]) -> Dict[str, np.ndarray
     :param detections:
         {
             "rois": array(
-                [[x1, y1, w1, h1],
-                 [x2, y2, w2, h2]], dtype=int32),
+                [[y1_1, x1_1, y2_1, x2_1],
+                 [y1_2, x1_2, y2_2, x2_2]], dtype=int32),
             "class_ids": array([c1, c2], dtype=int32),
             "scores": array([0.9, 0.8], dtype=float32),
             "masks": array(
@@ -47,7 +47,7 @@ def match_detections(det1: Dict[str, np.ndarray], det2: Dict[str, np.ndarray]) -
     :param det1: same as 'detections' in 'filter_detections' above
     :param det2: same as 'detections' in 'filter_detections' above
     :return: list of dictionaries with the following fields:
-        class_id: int
+        class_name: str
         det1_index: int: index of detected item in det1
         det2_index: int: index of detected item in det2
         det1_coordinates: List[int]: same as 'rois' in 'detections'
@@ -64,10 +64,15 @@ def match_detections(det1: Dict[str, np.ndarray], det2: Dict[str, np.ndarray]) -
                 continue
 
             # check that the overlaps are large enough
-            x1, y1, w1, h1 = det1["rois"][i]
-            x2, y2, w2, h2 = det2["rois"][j]
-            x_dist = min(x1 + w1, x2 + w2) - max(x1, x2)
-            y_dist = min(y1 + h1, y2 + h2) - max(y1, y2)
+            y_top_1, x_lft_1, y_bot_1, x_rgt_1 = det1["rois"][i]
+            y_top_2, x_lft_2, y_bot_2, x_rgt_2 = det2["rois"][j]
+            h1 = y_bot_1 - y_top_1
+            h2 = y_bot_2 - y_top_2
+            w1 = x_rgt_1 - x_lft_1
+            w2 = x_rgt_2 - x_lft_2
+
+            x_dist = min(x_rgt_1, x_rgt_2) - max(x_lft_1, x_lft_2)
+            y_dist = min(y_bot_1, y_bot_2) - max(y_top_1, y_top_2)
 
             if x_dist > 0 and y_dist > 0:
                 area_overlap = x_dist * y_dist
@@ -76,7 +81,7 @@ def match_detections(det1: Dict[str, np.ndarray], det2: Dict[str, np.ndarray]) -
 
                 if overlap_ratio >= MIN_OVERLAP_RATIO:
                     matches.append({
-                        "class_id": det1["class_ids"][i],
+                        "class_name": class_lookup[det1["class_ids"][i]],
                         "det1_index": i,
                         "det2_index": j,
                         "det1_coordinates": det1["rois"][i],

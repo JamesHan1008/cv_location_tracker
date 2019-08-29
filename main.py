@@ -14,7 +14,7 @@ import coco
 
 from configs.classes import classes
 from util.detections import filter_detections, match_detections
-from util.movement import calculate_movement
+from util.movement import calculate_aggregate_movement
 
 ROOT_DIR = os.path.dirname(os.path.realpath(__file__))
 IMAGE_DIR = os.path.join(ROOT_DIR, "images")
@@ -42,34 +42,37 @@ model.load_weights(MODEL_PATH, by_name=True)
 # Read from a video
 video = cv2.VideoCapture("videos/driving_short.mp4")
 frame_count = 0
-prev_detections = None
+detections_memory = []
+
+# TODO: take video of walking toward stop sign
+# TODO: download map
+# TODO: draw path on map
 
 while video.isOpened():
     _, frame = video.read()  # X by Y by 3 (RGB)
-    curr_detections = model.detect([frame], verbose=1)[0]
+    detections = model.detect([frame], verbose=1)[0]
+    detections = filter_detections(detections)
 
-    curr_detections = filter_detections(curr_detections)
+    detections_memory.append(detections)
 
-    if prev_detections is not None:
-        matched_detections = match_detections(prev_detections, curr_detections)
-        print(matched_detections)
+    if len(detections_memory) == 7:
+        distance, direction = calculate_aggregate_movement(detections_memory, camera_id="example", image_width=frame.shape[1])
+        print(distance)
+        print(direction)
+        exit(0)
 
-        distance, direction = calculate_movement(matched_detections, camera_id="example", image_width=frame.shape[1])
-        print(distance, direction)
+        if debugging:
+            visualize.display_instances(
+                frame,
+                detections["rois"],
+                detections["masks"],
+                detections["class_ids"],
+                list(classes.keys()),
+                detections["scores"],
+            )
 
-    if debugging:
-        visualize.display_instances(
-            frame,
-            curr_detections['rois'],
-            curr_detections['masks'],
-            curr_detections['class_ids'],
-            list(classes.keys()),
-            curr_detections['scores'],
-        )
-
-    prev_detections = curr_detections
     frame_count += 1
-    if frame_count >= 2:
+    if frame_count >= 7:
         break
 
 video.release()

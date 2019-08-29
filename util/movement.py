@@ -1,11 +1,12 @@
 import numpy as np
-from typing import List
+from typing import List, Tuple
 
 from configs.camera_settings import camera_settings
 from configs.classes import classes
+from util.detections import match_detections
 
 
-def calculate_movement(matched_detections: List[dict], camera_id: str, image_width: int):
+def calculate_movement(matched_detections: List[dict], camera_id: str, image_width: int) -> Tuple[float, float]:
     """
     Calculates the movement of the observer (camera) based on changes to the locations and sizes of detected objects
     TODO: the calculations in this function is most accurate when the object is directly in front of the observer, a more accurate calculation method is needed
@@ -49,6 +50,7 @@ def calculate_movement(matched_detections: List[dict], camera_id: str, image_wid
         dw = d1w - d2w
         dh = d1h - d2h
         d = (dw + dh) / 2
+        d = d / camera_settings[camera_id]["meters_per_pixel"]
 
         # angle of movement
         field_of_view = camera_settings[camera_id]["field_of_view"]
@@ -65,6 +67,85 @@ def calculate_movement(matched_detections: List[dict], camera_id: str, image_wid
         directions.append(theta)
 
     if len(distances) == 0:
-        return None, None
+        # TODO: better handling of these situations
+        return 0, 0
     else:
         return np.mean(distances), np.mean(directions)
+
+
+def movement_conversion_p2c(distance: float, direction: float) -> Tuple[float, float]:
+    """
+    Converts polar movement representation to cartesian movement representation
+    :param distance:
+    :param direction:
+    :return:
+        dist_forward (float): direction of movement forward
+        dist_sideways (float): direction of movement to the right
+    """
+    dist_forward = distance * np.cos(direction)
+    dist_sideways = distance * np.sin(direction)
+    return dist_forward, dist_sideways
+
+
+def movement_conversion_c2p(dist_forward: float, dist_sideways: float) -> Tuple[float, float]:
+    """
+    Converts cartesian movement representation to polar movement representation
+    :param dist_forward:
+    :param dist_sideways:
+    :return:
+        distance (float): distance traveled in meters (positive means moving forward)
+        direction (float): direction of movement in radians (positive means moving to the right)
+    """
+    distance = np.sqrt(dist_forward ** 2 + dist_sideways ** 2)
+    direction = np.arctan(dist_sideways / dist_forward)
+    return distance, direction
+
+
+def calculate_aggregate_movement(detections_memory: List[dict], camera_id: str, image_width: int) -> Tuple[float, float]:
+    """
+    Calculates the aggregate movement across 6 frames
+    :param detections_memory: list of detection objects (default Mask RCNN detection schema)
+    :param camera_id:
+    :param image_width:
+    :return:
+        distance (float): distance traveled in meters (positive means moving forward)
+        direction (float): direction of movement in radians (positive means moving to the right)
+    """
+    step_sizes = [1, 2]
+
+    agg_dist_forward_estimates = []
+    agg_dist_sideways_estimates = []
+
+    # make different estimates of aggregate movement using different step sizes
+    for step_size in step_sizes:
+        agg_dist_forward = 0
+        agg_dist_sideways = 0
+        agg_direction = 0
+
+        # for each step size, take however many steps is required to aggregate over 6 frames of movement
+        for i in range(0, 6, step_size):
+            matched_detections = match_detections(detections_memory[i], detections_memory[i + step_size])
+            distance, direction = calculate_movement(matched_detections, camera_id, image_width)
+            agg_direction += direction
+
+            dist_forward, dist_sideways = movement_conversion_p2c(distance, agg_direction)
+            agg_dist_forward += dist_forward
+            agg_dist_sideways += dist_sideways
+
+        agg_dist_forward_estimates.append(agg_dist_forward)
+        agg_dist_sideways_estimates.append(agg_dist_sideways)
+
+    # make sure different estimates are not too far off
+    if max(agg_dist_forward_estimates) - min(agg_dist_forward_estimates) > 1 or \
+       max(agg_dist_sideways_estimates) - min(agg_dist_sideways_estimates) > 1:
+        print("Warning: movement estimates are far apart")
+        print(f"Forward movement estimates: {agg_dist_forward_estimates}")
+        print(f"Sideways movement estimates: {agg_dist_sideways_estimates}")
+
+    mean_agg_dist_forward = np.mean(agg_dist_forward_estimates)
+    mean_agg_dist_sideways = np.mean(agg_dist_sideways_estimates)
+
+    distance = np.sqrt(mean_agg_dist_forward ** 2 + mean_agg_dist_sideways ** 2)
+    direction = np.arctan(mean_agg_dist_sideways / mean_agg_dist_forward)
+
+    return distance, direction

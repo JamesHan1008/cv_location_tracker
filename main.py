@@ -40,11 +40,10 @@ model = modellib.MaskRCNN(mode="inference", model_dir=TRAIN_DIR, config=config)
 model.load_weights(MODEL_PATH, by_name=True)
 
 # Read from a video
-video = cv2.VideoCapture("videos/driving_short.mp4")
+video = cv2.VideoCapture("videos/walking_1.MOV")
 frame_count = 0
 detections_memory = []
 
-# TODO: take video of walking toward stop sign
 # TODO: download map
 # TODO: draw path on map
 
@@ -57,6 +56,7 @@ while video.isOpened():
 
     if len(detections_memory) == 7:
         distance, direction = calculate_aggregate_movement(detections_memory, camera_id="example", image_width=frame.shape[1])
+
         print(distance)
         print(direction)
         exit(0)

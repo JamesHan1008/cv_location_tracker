@@ -98,6 +98,10 @@ def movement_conversion_c2p(dist_forward: float, dist_sideways: float) -> Tuple[
     """
     distance = np.sqrt(dist_forward ** 2 + dist_sideways ** 2)
     direction = np.arctan(dist_sideways / dist_forward)
+
+    if dist_forward < 0:
+        direction += np.pi
+
     return distance, direction
 
 
@@ -111,7 +115,7 @@ def calculate_aggregate_movement(detections_memory: List[dict], camera_id: str, 
         distance (float): distance traveled in meters (positive means moving forward)
         direction (float): direction of movement in radians (positive means moving to the right)
     """
-    step_sizes = [1, 2]
+    step_sizes = [1, 2, 3, 6]
 
     agg_dist_forward_estimates = []
     agg_dist_sideways_estimates = []
@@ -142,10 +146,12 @@ def calculate_aggregate_movement(detections_memory: List[dict], camera_id: str, 
         print(f"Forward movement estimates: {agg_dist_forward_estimates}")
         print(f"Sideways movement estimates: {agg_dist_sideways_estimates}")
 
+    print(agg_dist_forward_estimates)
+    print(agg_dist_sideways_estimates)
+
     mean_agg_dist_forward = np.mean(agg_dist_forward_estimates)
     mean_agg_dist_sideways = np.mean(agg_dist_sideways_estimates)
 
-    distance = np.sqrt(mean_agg_dist_forward ** 2 + mean_agg_dist_sideways ** 2)
-    direction = np.arctan(mean_agg_dist_sideways / mean_agg_dist_forward)
+    distance, direction = movement_conversion_c2p(mean_agg_dist_forward, mean_agg_dist_sideways)
 
     return distance, direction

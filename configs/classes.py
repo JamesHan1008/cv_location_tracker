@@ -75,8 +75,8 @@ classes = {
     "stop sign": {
         "id": 12,
         "type": "stationary",
-        "mean_width": None,
-        "mean_height": None,
+        "mean_width": 0.8,
+        "mean_height": 0.8,
     },
     "parking meter": {
         "id": 13,

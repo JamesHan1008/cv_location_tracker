@@ -155,3 +155,31 @@ def calculate_aggregate_movement(detections_memory: List[dict], camera_id: str, 
     distance, direction = movement_conversion_c2p(mean_agg_dist_forward, mean_agg_dist_sideways)
 
     return distance, direction
+
+
+def calculate_new_location(x_old: int, y_old:int, theta_old: float, distance: float, direction:float) -> Tuple[int, int, float]:
+    """
+    Calculate the new location of the observer based on the previous location and the movement
+    :param x_old: distance measured from the left side
+    :param y_old: distance measured from the top
+    :param theta_old: angle (radians) measured from the positive x-axis
+    :param distance: distance moved in meters
+    :param direction: direction of movement (radians) where moving to the right is positive and left is negative
+    :return:
+        x_new:
+        y_new:
+        theta_new:
+    """
+    theta_new = theta_old + direction
+    if theta_new < 0:
+        theta_new += np.pi * 2
+    if theta_new > np.pi * 2:
+        theta_new -= np.pi * 2
+
+    x_moved = distance * np.cos(theta_new)
+    y_moved = distance * np.sin(theta_new)
+
+    x_new = int(x_old + x_moved)
+    y_new = int(y_old - y_moved)
+
+    return x_new, y_new, theta_new

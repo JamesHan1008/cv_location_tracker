@@ -13,15 +13,16 @@ from mrcnn import visualize
 import coco
 
 from configs.classes import classes
-from util.detections import filter_detections, match_detections
-from util.movement import calculate_aggregate_movement
+from util.detections import filter_detections
+from util.movement import calculate_aggregate_movement, calculate_new_location
+from util.mapping import draw_path
 
 ROOT_DIR = os.path.dirname(os.path.realpath(__file__))
 IMAGE_DIR = os.path.join(ROOT_DIR, "images")
 TRAIN_DIR = os.path.join(ROOT_DIR, "train")
 MODEL_PATH = os.path.join(ROOT_DIR, "models", "mask_rcnn_coco.h5")
 
-debugging = True
+debugging = False
 
 
 class InferenceConfig(coco.CocoConfig):
@@ -39,13 +40,19 @@ model = modellib.MaskRCNN(mode="inference", model_dir=TRAIN_DIR, config=config)
 # Load weights trained on MS-COCO
 model.load_weights(MODEL_PATH, by_name=True)
 
+# Load map
+map = cv2.imread("maps/map_sf.png")
+x_prev = 600
+y_prev = 815
+theta_prev = 0
+
 # Read from a video
 video = cv2.VideoCapture("videos/walking_1.MOV")
 frame_count = 0
 detections_memory = []
 
-# TODO: download map
 # TODO: draw path on map
+# TODO: better handling of when to draw and how much memory to keep
 
 while video.isOpened():
     _, frame = video.read()  # X by Y by 3 (RGB)
@@ -54,12 +61,14 @@ while video.isOpened():
 
     detections_memory.append(detections)
 
-    if len(detections_memory) == 7:
+    if len(detections_memory) % 7 == 0:
         distance, direction = calculate_aggregate_movement(detections_memory, camera_id="example", image_width=frame.shape[1])
 
-        print(distance)
-        print(direction)
-        exit(0)
+        x_curr, y_curr, theta_curr = calculate_new_location(x_prev, y_prev, theta_prev, distance, direction)
+
+        map = draw_path(map, x_prev, y_prev, x_curr, y_curr)
+
+        cv2.imwrite("maps/new_map.png", map)
 
         if debugging:
             visualize.display_instances(
@@ -71,8 +80,10 @@ while video.isOpened():
                 detections["scores"],
             )
 
+        x_prev, y_prev, theta_prev = x_curr, y_curr, theta_curr
+
     frame_count += 1
-    if frame_count >= 7:
+    if frame_count >= 14:
         break
 
 video.release()

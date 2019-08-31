@@ -5,3 +5,8 @@
 images/
 videos/
 maps/
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb
+__pycache__/

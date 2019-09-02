@@ -1,9 +1,15 @@
-import numpy as np
 from typing import List, Tuple
+
+import numpy as np
+import structlog
 
 from configs.camera_settings import camera_settings
 from configs.classes import classes
+from configs.map_settings import map_settings
 from util.detections import match_detections
+
+structlog.configure(logger_factory=structlog.PrintLoggerFactory())
+logger = structlog.get_logger(processors=[structlog.processors.JSONRenderer()])
 
 
 def calculate_movement(matched_detections: List[dict], camera_id: str, image_width: int) -> Tuple[float, float]:
@@ -15,7 +21,7 @@ def calculate_movement(matched_detections: List[dict], camera_id: str, image_wid
     :param image_width: width of the image in pixels
     :return:
         distance (float): distance traveled in meters (positive means moving forward)
-        direction (float): direction of movement in radians (positive means moving to the right)
+        direction (float): direction of movement in radians (positive means moving to the left)
     """
     if camera_id not in camera_settings:
         raise ValueError(f"camera ID is invalid: {camera_id}")
@@ -55,11 +61,11 @@ def calculate_movement(matched_detections: List[dict], camera_id: str, image_wid
         # angle of movement
         field_of_view = camera_settings[camera_id]["field_of_view"]
         x_half_of_image = image_width / 2
-        x1_right_of_center = x_cnt_1 - x_half_of_image
-        x2_right_of_center = x_cnt_2 - x_half_of_image
+        x1_left_of_center = x_half_of_image - x_cnt_1
+        x2_left_of_center = x_half_of_image - x_cnt_2
 
-        theta1 = np.arctan((x1_right_of_center / x_half_of_image) * np.tan(field_of_view / 2))
-        theta2 = np.arctan((x2_right_of_center / x_half_of_image) * np.tan(field_of_view / 2))
+        theta1 = np.arctan((x1_left_of_center / x_half_of_image) * np.tan(field_of_view / 2))
+        theta2 = np.arctan((x2_left_of_center / x_half_of_image) * np.tan(field_of_view / 2))
         theta = theta1 - theta2  # direction of observer is opposite of the direction of the object
 
         # keep track of the estimates based on each object
@@ -76,11 +82,11 @@ def calculate_movement(matched_detections: List[dict], camera_id: str, image_wid
 def movement_conversion_p2c(distance: float, direction: float) -> Tuple[float, float]:
     """
     Converts polar movement representation to cartesian movement representation
-    :param distance:
-    :param direction:
+    :param distance: distance traveled in meters (positive means moving forward)
+    :param direction: direction of movement in radians (positive means moving to the left)
     :return:
         dist_forward (float): direction of movement forward
-        dist_sideways (float): direction of movement to the right
+        dist_sideways (float): direction of movement to the left
     """
     dist_forward = distance * np.cos(direction)
     dist_sideways = distance * np.sin(direction)
@@ -90,14 +96,18 @@ def movement_conversion_p2c(distance: float, direction: float) -> Tuple[float, f
 def movement_conversion_c2p(dist_forward: float, dist_sideways: float) -> Tuple[float, float]:
     """
     Converts cartesian movement representation to polar movement representation
-    :param dist_forward:
-    :param dist_sideways:
+    :param dist_forward: direction of movement forward
+    :param dist_sideways: direction of movement to the left
     :return:
         distance (float): distance traveled in meters (positive means moving forward)
-        direction (float): direction of movement in radians (positive means moving to the right)
+        direction (float): direction of movement in radians (positive means moving to the left)
     """
     distance = np.sqrt(dist_forward ** 2 + dist_sideways ** 2)
-    direction = np.arctan(dist_sideways / dist_forward)
+
+    if dist_forward == 0:
+        direction = 0
+    else:
+        direction = np.arctan(dist_sideways / dist_forward)
 
     if dist_forward < 0:
         direction += np.pi
@@ -109,11 +119,11 @@ def calculate_aggregate_movement(detections_memory: List[dict], camera_id: str, 
     """
     Calculates the aggregate movement across 6 frames
     :param detections_memory: list of detection objects (default Mask RCNN detection schema)
-    :param camera_id:
-    :param image_width:
+    :param camera_id: ID of the camera used in capturing the video
+    :param image_width: width of the image in pixels
     :return:
         distance (float): distance traveled in meters (positive means moving forward)
-        direction (float): direction of movement in radians (positive means moving to the right)
+        direction (float): direction of movement in radians (positive means moving to the left)
     """
     step_sizes = [1, 2, 3, 6]
 
@@ -142,33 +152,41 @@ def calculate_aggregate_movement(detections_memory: List[dict], camera_id: str, 
     # make sure different estimates are not too far off
     if max(agg_dist_forward_estimates) - min(agg_dist_forward_estimates) > 1 or \
        max(agg_dist_sideways_estimates) - min(agg_dist_sideways_estimates) > 1:
-        print("Warning: movement estimates are far apart")
-        print(f"Forward movement estimates: {agg_dist_forward_estimates}")
-        print(f"Sideways movement estimates: {agg_dist_sideways_estimates}")
-
-    print(agg_dist_forward_estimates)
-    print(agg_dist_sideways_estimates)
+        logger.warning(
+            "Movement estimates are far apart",
+            dist_forward_estimates=agg_dist_forward_estimates,
+            dist_sideways_estimates=agg_dist_sideways_estimates,
+        )
 
     mean_agg_dist_forward = np.mean(agg_dist_forward_estimates)
     mean_agg_dist_sideways = np.mean(agg_dist_sideways_estimates)
 
     distance, direction = movement_conversion_c2p(mean_agg_dist_forward, mean_agg_dist_sideways)
 
+    logger.info(
+        "Movement calculated",
+        dist_forward=mean_agg_dist_forward,
+        dist_sideways=mean_agg_dist_sideways,
+        distance=distance,
+        direction=direction,
+    )
+
     return distance, direction
 
 
-def calculate_new_location(x_old: int, y_old:int, theta_old: float, distance: float, direction:float) -> Tuple[int, int, float]:
+def calculate_new_location(map_name: str, x_old: int, y_old: int, theta_old: float, distance: float, direction: float) -> Tuple[int, int, float]:
     """
     Calculate the new location of the observer based on the previous location and the movement
-    :param x_old: distance measured from the left side
-    :param y_old: distance measured from the top
+    :param map_name: name of the map used to retrieve map settings
+    :param x_old: distance (pixels) measured from the left edge
+    :param y_old: distance (pixels) measured from the top edge
     :param theta_old: angle (radians) measured from the positive x-axis
-    :param distance: distance moved in meters
-    :param direction: direction of movement (radians) where moving to the right is positive and left is negative
+    :param distance: distance traveled (meters) where positive means moving forward
+    :param direction: direction of movement (radians) where positive means moving to the left
     :return:
-        x_new:
-        y_new:
-        theta_new:
+        x_new: (pixels)
+        y_new: (pixels)
+        theta_new: (radians)
     """
     theta_new = theta_old + direction
     if theta_new < 0:
@@ -176,10 +194,19 @@ def calculate_new_location(x_old: int, y_old:int, theta_old: float, distance: fl
     if theta_new > np.pi * 2:
         theta_new -= np.pi * 2
 
-    x_moved = distance * np.cos(theta_new)
-    y_moved = distance * np.sin(theta_new)
+    pixels_per_meter = 1 / map_settings[map_name]["meters_per_pixel"]
+    x_moved = distance * np.cos(theta_new) * pixels_per_meter
+    y_moved = distance * np.sin(theta_new) * pixels_per_meter
 
     x_new = int(x_old + x_moved)
     y_new = int(y_old - y_moved)
+
+    logger.info(
+        "New location calculated",
+        old_location=(x_old, y_old),
+        new_location=(x_new, y_new),
+        old_direction=theta_old,
+        new_direction=theta_new,
+    )
 
     return x_new, y_new, theta_new

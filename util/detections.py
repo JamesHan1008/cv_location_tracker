@@ -1,8 +1,12 @@
 from typing import Dict, List
 
 import numpy as np
+import structlog
 
 from configs.classes import classes, class_lookup
+
+structlog.configure(logger_factory=structlog.PrintLoggerFactory())
+logger = structlog.get_logger(processors=[structlog.processors.JSONRenderer()])
 
 MIN_OVERLAP_RATIO = 0.
 
@@ -25,6 +29,8 @@ def filter_detections(detections: Dict[str, np.ndarray]) -> Dict[str, np.ndarray
         }
     :return: same as 'detections', but only including 'stationary' type objects
     """
+    num_total_detections = len(detections["class_ids"])
+
     indexes_to_keep = []
     for i, class_id in enumerate(detections["class_ids"]):
         class_name = class_lookup[class_id]
@@ -37,6 +43,12 @@ def filter_detections(detections: Dict[str, np.ndarray]) -> Dict[str, np.ndarray
 
     # number of objects detected is the last (3rd) dimension for 'masks'
     detections["masks"] = detections["masks"][:, :, indexes_to_keep]
+
+    logger.info(
+        "detections filtered",
+        num_total_detections=num_total_detections,
+        num_remaining_detections=len(detections["class_ids"]),
+    )
 
     return detections
 

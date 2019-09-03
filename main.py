@@ -3,16 +3,15 @@ import sys
 import cv2
 import structlog
 
-# Import Mask RCNN
+# Path for importing Mask RCNN
 MRCNN_PATH = os.getenv("MRCNN_PATH")
 sys.path.append(MRCNN_PATH)
-sys.path.append(os.path.join(MRCNN_PATH, "samples/coco/"))
 
 import mrcnn.model as modellib
 from mrcnn import visualize
-import coco
 
 from configs.classes import classes
+from configs.inference_config import InferenceConfig
 from util.detections import filter_detections
 from util.movement import calculate_aggregate_movement, calculate_new_location
 from util.mapping import draw_path
@@ -26,20 +25,13 @@ debugging = True
 structlog.configure(logger_factory=structlog.PrintLoggerFactory())
 logger = structlog.get_logger(processors=[structlog.processors.JSONRenderer()])
 
-
-class InferenceConfig(coco.CocoConfig):
-    # Set batch size to 1 since we'll be running inference on
-    # one image at a time. Batch size = GPU_COUNT * IMAGES_PER_GPU
-    GPU_COUNT = 1
-    IMAGES_PER_GPU = 1
-
-
+# Model configurations
 config = InferenceConfig()
+if debugging is True:
+    config.display()
 
-# Create model object in inference mode.
-model = modellib.MaskRCNN(mode="inference", model_dir=TRAIN_DIR, config=config)
-
-# Load weights trained on MS-COCO
+# Create model object in inference mode with weights trained on the MS-COCO data set
+model = modellib.MaskRCNN(mode="inference", config=config, model_dir=TRAIN_DIR)
 model.load_weights(MODEL_PATH, by_name=True)
 
 # Load map
@@ -54,7 +46,8 @@ frame_count = 0
 detections_memory = []
 
 while video.isOpened():
-    _, frame = video.read()  # X by Y by 3 (RGB)
+    _, frame = video.read()  # X by Y by 3 (BGR)
+    frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
     detections = model.detect([frame], verbose=1)[0]
     detections = filter_detections(detections)

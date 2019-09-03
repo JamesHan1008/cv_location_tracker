@@ -4,7 +4,7 @@ import cv2
 import numpy as np
 
 
-def draw_path(map: np.ndarray, x_old: int, y_old: int, x_new: int, y_new: int, color: Tuple[int]) -> np.ndarray:
+def draw_path(map: np.ndarray, x_old: float, y_old: float, x_new: float, y_new: float, color: Tuple[int]) -> np.ndarray:
     """
     Draws a path on a map
     :param map:
@@ -15,5 +15,10 @@ def draw_path(map: np.ndarray, x_old: int, y_old: int, x_new: int, y_new: int, c
     :param color: BGR
     :return: a new map with the path drawn on it
     """
-    cv2.line(map, (x_old, y_old), (x_new, y_new), color, 5)
+    x_old = int(round(x_old, 0))
+    y_old = int(round(y_old, 0))
+    x_new = int(round(x_new, 0))
+    y_new = int(round(y_new, 0))
+
+    cv2.line(map, (x_old, y_old), (x_new, y_new), color, 3)
     return map

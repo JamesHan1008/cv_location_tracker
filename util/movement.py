@@ -174,7 +174,7 @@ def calculate_aggregate_movement(detections_memory: List[dict], camera_id: str, 
     return distance, direction
 
 
-def calculate_new_location(map_name: str, x_old: int, y_old: int, theta_old: float, distance: float, direction: float) -> Tuple[int, int, float]:
+def calculate_new_location(map_name: str, x_old: int, y_old: int, theta_old: float, distance: float, direction: float) -> Tuple[float, float, float]:
     """
     Calculate the new location of the observer based on the previous location and the movement
     :param map_name: name of the map used to retrieve map settings
@@ -198,8 +198,8 @@ def calculate_new_location(map_name: str, x_old: int, y_old: int, theta_old: flo
     x_moved = distance * np.cos(theta_new) * pixels_per_meter
     y_moved = distance * np.sin(theta_new) * pixels_per_meter
 
-    x_new = int(x_old + x_moved)
-    y_new = int(y_old - y_moved)
+    x_new = round(x_old + x_moved, 2)
+    y_new = round(y_old - y_moved, 2)
 
     logger.info(
         "New location calculated",

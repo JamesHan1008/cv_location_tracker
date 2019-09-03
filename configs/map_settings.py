@@ -3,6 +3,6 @@ map_settings = {
         "meters_per_pixel": 0.61688,
     },
     "map_hayward.png": {
-        "meters_per_pixel": 0.025,  # 2.5
+        "meters_per_pixel": 2.5,
     },
 }

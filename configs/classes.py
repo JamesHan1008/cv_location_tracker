@@ -69,8 +69,8 @@ classes = {
     "fire hydrant": {
         "id": 11,
         "type": "stationary",
-        "mean_width": None,
-        "mean_height": None,
+        "mean_width": 0.5,
+        "mean_height": 1,
     },
     "stop sign": {
         "id": 12,
@@ -81,14 +81,14 @@ classes = {
     "parking meter": {
         "id": 13,
         "type": "stationary",
-        "mean_width": None,
-        "mean_height": None,
+        "mean_width": 0.3,
+        "mean_height": 0.5,
     },
     "bench": {
         "id": 14,
         "type": "stationary",
-        "mean_width": None,
-        "mean_height": None,
+        "mean_width": 2,
+        "mean_height": 1,
     },
     "bird": {
         "id": 15,

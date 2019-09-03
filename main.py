@@ -1,5 +1,7 @@
 import os
 import sys
+import time
+
 import cv2
 import structlog
 
@@ -21,7 +23,7 @@ IMAGE_DIR = os.path.join(ROOT_DIR, "images")
 TRAIN_DIR = os.path.join(ROOT_DIR, "train")
 MODEL_PATH = os.path.join(ROOT_DIR, "models", "mask_rcnn_coco.h5")
 
-debugging = True
+debugging = False
 structlog.configure(logger_factory=structlog.PrintLoggerFactory())
 logger = structlog.get_logger(processors=[structlog.processors.JSONRenderer()])
 
@@ -42,9 +44,14 @@ theta_prev = 0
 
 # Read from a video
 video = cv2.VideoCapture("videos/intersection_stop_sign.MOV")
+fps = video.get(cv2.CAP_PROP_FPS)
+num_frames = int(video.get(cv2.CAP_PROP_FRAME_COUNT))
+
 frame_count = 0
 detections_memory = []
 
+logger.info("Processing video", fps=fps, num_frames=num_frames, duration=num_frames/fps)
+t_start = time.time()
 while video.isOpened():
     _, frame = video.read()  # X by Y by 3 (BGR)
     frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
@@ -56,10 +63,12 @@ while video.isOpened():
 
     # calculate movements every 6 frames, starting from the 7th frame
     if frame_count % 6 == 0 and frame_count != 0:
+        logger.info(f"{frame_count + 1} frames processed out of {num_frames}", total_time_elapsed=time.time()-t_start)
+
         distance, direction = calculate_aggregate_movement(detections_memory, camera_id="example", image_width=frame.shape[1])
         x_curr, y_curr, theta_curr = calculate_new_location("map_hayward.png", x_prev, y_prev, theta_prev, distance, direction)
 
-        color = (255 - frame_count * 5, 0, frame_count * 5)
+        color = (255 - frame_count * 3, 0, frame_count * 3)
         map = draw_path(map, x_prev, y_prev, x_curr, y_curr, color)
         cv2.imwrite("maps/new_map.png", map)
 
@@ -77,8 +86,13 @@ while video.isOpened():
         detections_memory = [detections]  # clear memory and only keep the last frame's detections
 
     frame_count += 1
-    if frame_count >= 25:
+    if frame_count >= num_frames:
+        logger.info("Finished processing video")
         break
+
+    if debugging is True:
+        if frame_count >= 7:
+            break
 
 video.release()
 cv2.destroyAllWindows()

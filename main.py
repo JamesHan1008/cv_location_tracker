@@ -1,6 +1,5 @@
 import os
 import sys
-
 import cv2
 import structlog
 
@@ -72,7 +71,6 @@ while video.isOpened():
         cv2.imwrite("maps/new_map.png", map)
 
         if debugging:
-            print(frame)
             visualize.display_instances(
                 frame,
                 detections["rois"],

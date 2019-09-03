@@ -8,7 +8,7 @@ ipython = "*"
 
 [packages]
 numpy = "*"
-matplotlib = "*"
+matplotlib = "==2.0.2"
 scikit-image = "*"
 tensorflow = "*"
 keras = "*"

@@ -14,7 +14,7 @@ from mrcnn import visualize
 
 from configs.classes import classes
 from configs.inference_config import InferenceConfig
-from util.detections import filter_detections
+from util.detections import DetectionSet, filter_detections
 from util.movement import calculate_aggregate_movement, calculate_new_location
 from util.mapping import draw_path
 
@@ -48,7 +48,7 @@ fps = video.get(cv2.CAP_PROP_FPS)
 num_frames = int(video.get(cv2.CAP_PROP_FRAME_COUNT))
 
 frame_count = 0
-detections_memory = []
+ds_memory = []
 
 logger.info("Processing video", fps=fps, num_frames=num_frames, duration=num_frames/fps)
 t_start = time.time()
@@ -56,17 +56,18 @@ while video.isOpened():
     _, frame = video.read()  # X by Y by 3 (BGR)
     frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
-    detections = model.detect([frame], verbose=1)[0]
-    detections = filter_detections(detections)
+    detection_dict = model.detect([frame], verbose=1)[0]
+    detection_set = DetectionSet(detection_dict)
+    detection_set = filter_detections(detection_set)
 
-    detections_memory.append(detections)
+    ds_memory.append(detection_set)
 
     # calculate movements every 6 frames, starting from the 7th frame
     if frame_count % 6 == 0 and frame_count != 0:
         logger.info(f"{frame_count + 1} frames processed out of {num_frames}", total_time_elapsed=time.time()-t_start)
 
-        distance, direction = calculate_aggregate_movement(detections_memory, camera_id="example", image_width=frame.shape[1])
-        x_curr, y_curr, theta_curr = calculate_new_location("map_hayward.png", x_prev, y_prev, theta_prev, distance, direction)
+        movement = calculate_aggregate_movement(ds_memory, camera_id="example", image_width=frame.shape[1])
+        x_curr, y_curr, theta_curr = calculate_new_location("map_hayward.png", x_prev, y_prev, theta_prev, movement)
 
         color = (255 - frame_count * 3, 0, frame_count * 3)
         map = draw_path(map, x_prev, y_prev, x_curr, y_curr, color)
@@ -75,15 +76,15 @@ while video.isOpened():
         if debugging:
             visualize.display_instances(
                 frame,
-                detections["rois"],
-                detections["masks"],
-                detections["class_ids"],
+                detection_set.rois,
+                detection_set.masks,
+                detection_set.class_ids,
                 list(classes.keys()),
-                detections["scores"],
+                detection_set.scores,
             )
 
         x_prev, y_prev, theta_prev = x_curr, y_curr, theta_curr
-        detections_memory = [detections]  # clear memory and only keep the last frame's detections
+        ds_memory = [detection_set]  # clear memory and only keep the last frame's detections
 
     frame_count += 1
     if frame_count >= num_frames:

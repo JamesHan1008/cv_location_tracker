@@ -7,8 +7,6 @@ python3 -m main
 
 
 # TO DO
-- Make detections into a class
-- Make movements into a class
 - Let user select starting position on a map
 - Show video and predicted path on map simultaneously
 - Train model with additional stationary classes like "tree", "street light", etc.

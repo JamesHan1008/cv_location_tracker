@@ -21,16 +21,20 @@ class DetectionSet:
         """
         :param detection_dict:
             {
-                "rois": array(
-                    [[y1_1, x1_1, y2_1, x2_1],
-                     [y1_2, x1_2, y2_2, x2_2]], dtype=int32),
-                "class_ids": array([c1, c2], dtype=int32),
-                "scores": array([0.9, 0.8], dtype=float32),
-                "masks": array(
-                    [[[False, False, True, ... , False, False],
-                      [ ... ]],
-                     [[ ... ],
-                      [ ... ]]])
+                "rois": np.ndarray(num_detections x 4)
+                    array([[y1_1, x1_1, y2_1, x2_1],
+                           [y1_2, x1_2, y2_2, x2_2]], dtype=int32)
+
+                "class_ids": np.ndarray(num_detections)
+                    array([c1, c2], dtype=int32)
+
+                "scores": np.ndarray(num_detections)
+                    array([0.9, 0.8], dtype=float32)
+
+                "masks": np.ndarray(H x W x num_detections)
+                    array([[[False, False], ... , [False, False]],
+                          ...
+                           [[False, False], ... , [False, False]]], dtype=bool)
             }
         """
         self.rois = detection_dict["rois"]

@@ -20,7 +20,6 @@ from util.movement import calculate_aggregate_movement, calculate_new_location
 from util.mapping import draw_path
 
 ROOT_DIR = os.path.dirname(os.path.realpath(__file__))
-IMAGE_DIR = os.path.join(ROOT_DIR, "images")
 TRAIN_DIR = os.path.join(ROOT_DIR, "train")
 MODEL_PATH = os.path.join(ROOT_DIR, "models", "mask_rcnn_coco.h5")
 

@@ -16,7 +16,13 @@ the default model used in this project.
     3. Use `train/generate_images_from_videos.py` to randomly sample frames of videos to generate images to be used for
     training
 2. Annotate the training images
-    1. Upload the newly generated images in `train/images/` to COCO Annotate
+    1. Upload the newly generated images in `train/images/` to `supervise.ly`
+        1. If another annotation tool is used, convert all annotations to the expected format and skip to step 3
+    2. Annotate the objects of the classes of interest using polygons
+    3. Use `train/convert_annotations_supervisely.py` to convert the polygons to bitmaps to follow the same structure
+    of training data that the Mask RCNN model expects
+3. Train the model
+    1. 
 
 
 # TO DO

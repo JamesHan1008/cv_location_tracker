@@ -485,7 +485,13 @@ classes = {
         "type": "irrelevant",
         "mean_width": None,
         "mean_height": None,
-    }
+    },
+    "tree": {
+        "id": 100,
+        "type": "stationary",
+        "mean_width": 1,
+        "mean_height": 2,
+    },
 }
 
 # class ID to class name lookup

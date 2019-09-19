@@ -6,6 +6,7 @@ videos/
 maps/
 train/images/
 train/videos/
+train/annotations/
 train/logs/
 
 # Jupyter

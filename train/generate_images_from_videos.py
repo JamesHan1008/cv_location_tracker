@@ -15,6 +15,8 @@ logger = structlog.get_logger(processors=[structlog.processors.JSONRenderer()])
 
 
 def main():
+    if not os.path.exists(VIDEOS_DIR):
+        raise NotADirectoryError(f"[{VIDEOS_DIR}] must exist and contain the videos to generate images from")
     if not os.path.exists(IMAGES_DIR):
         os.mkdir(IMAGES_DIR)
 

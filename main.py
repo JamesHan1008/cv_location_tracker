@@ -6,7 +6,7 @@ import cv2
 import numpy as np
 import structlog
 
-# Path for importing Mask RCNN
+# Path for importing the Mask R-CNN library
 MRCNN_PATH = os.getenv("MRCNN_PATH")
 sys.path.append(MRCNN_PATH)
 

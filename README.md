@@ -1,9 +1,24 @@
-# cv_location_tracker
-Track the Location of a Moving Vehicle or Person
+# Location Tracker Using Computer Vision
+Track the location of a moving vehicle or person.
 
-pip3 install git+https://github.com/waleedka/coco.git#subdirectory=PythonAPI
 
-python3 -m main
+## Set Up
+Before trying out this project, the following dependencies need to be set up.
+
+1. This project requires the Mask R-CNN codebase
+    1. Clone the Mask R-CNN repository from <https://github.com/matterport/Mask_RCNN>
+    2. Set the environment variable `MRCNN_PATH` to the path of this repository
+2. This project uses Pipenv
+    1. Install Pipenv: `$ brew install pipenv`
+    2. Create a new virtual environment: `$ pipenv shell`
+3. This project uses Git large file storage
+    1. Install Git LFS: `$ brew install git-lfs`
+    2. Set up Git LFS and its respective hooks: `$ git lfs install`
+    3. Pull down the large files stored using Git LFS: `$ git lfs pull`
+
+
+## Run the Location Tracker
+* `$ python3 -m main`
 
 
 ## Model Training
@@ -29,7 +44,6 @@ the default model used in this project.
 - Train model with additional stationary classes like "tree", "street light", etc.
   - Label the images
   - Write a class that extends utils.Dataset
-  - Write a class that extends Config
   - Write a train.py module
 
 - Record a longer video

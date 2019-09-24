@@ -16,6 +16,8 @@ from mrcnn.utils import Dataset
 class SuperviselyDataset(Dataset):
     """ A dataset that is annotated using Supervisely """
 
+    image_names = []
+
     def add_classes(self, source: str, classes: list) -> None:
         """ Add the classes to train for """
         for i, class_name in enumerate(classes):
@@ -23,12 +25,13 @@ class SuperviselyDataset(Dataset):
 
     def add_images(self, source: str, images_dir: str) -> None:
         """ Add the training images """
-        for file_name in os.listdir(images_dir):
+        for i, file_name in enumerate(os.listdir(images_dir)):
             self.add_image(
                 source=source,
-                image_id="abc",
+                image_id="placeholder",
                 path=os.path.join(images_dir, file_name),
             )
+            self.image_names.append(file_name)
 
     def load_image(self, image_id: str) -> np.ndarray:
         """
@@ -36,7 +39,8 @@ class SuperviselyDataset(Dataset):
         :param image_id:
         :return:
         """
-        image = cv2.imread(f"train/images/{image_id}")
+        file_name = self.image_names[image_id]
+        image = cv2.imread(f"train/images/{file_name}")
         return image
 
     def load_mask(self, image_id: str) -> Tuple[list, list]:
@@ -44,21 +48,25 @@ class SuperviselyDataset(Dataset):
         Load the mask from a file for the given image ID
         :param image_id:
         :return:
-            "masks": list(H x W x num_detections)
+            "masks": list(H x W x instance_count)
                     [[[False, False], ... , [False, False]],
                      ...
                      [[False, False], ... , [False, False]]]
 
-            "class_ids": np.ndarray(num_detections)
-                    array([c1, c2], dtype=int32)
+            "class_ids": list(instance_count)
+                    [100, 101]
         """
-        with open(f"train/annotations/converted/{image_id}.json") as f:
+        file_name = self.image_names[image_id]
+        with open(f"train/annotations/converted/{file_name}.json") as f:
             converted_annotations = json.load(f)
 
         masks = converted_annotations["masks"]
+        # TODO: fix this
         masks = np.asarray(masks)
         masks = masks == 1  # convert from 1/0 to True/False
+        print(masks)
         masks = masks.tolist()
+        print(masks)
 
         class_ids = converted_annotations["class_ids"]
 

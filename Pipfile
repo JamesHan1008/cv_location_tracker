@@ -10,11 +10,12 @@ ipython = "*"
 numpy = "*"
 scikit-image = "*"
 tensorflow = "*"
-keras = "*"
+keras = "==2.2.4"
 imgaug = "*"
 structlog = "*"
 pytest = "*"
 matplotlib = "*"
+tqdm = "*"
 
 [requires]
 python_version = "3.7"

@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "ddd2e5a39be7216013a9b1a5dcd7db3a5c92949d906b740e87f3469cfc099672"
+            "sha256": "7c0123a9303bfa0afa28d31ca0cec2cc3b3fddb79bbe8a2c92675176db50c7f4"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -165,11 +165,11 @@
         },
         "keras": {
             "hashes": [
-                "sha256:a0d6ecf1d71cd0b85ea1da27ea7314a9d4723f5b468b7cedd87dcad0a491b354",
-                "sha256:ff7db814756d9106c273afc4bd798f48924fa66f9328157a4b722d535baef363"
+                "sha256:794d0c92c6c4122f1f0fcf3a7bc2f49054c6a54ddbef8d8ffafca62795d760b6",
+                "sha256:90b610a3dbbf6d257b20a079eba3fdf2eed2158f64066a7c6f7227023fd60bc9"
             ],
             "index": "pypi",
-            "version": "==2.3.0"
+            "version": "==2.2.4"
         },
         "keras-applications": {
             "hashes": [
@@ -389,11 +389,11 @@
         },
         "pytest": {
             "hashes": [
-                "sha256:95d13143cc14174ca1a01ec68e84d76ba5d9d493ac02716fd9706c949a505210",
-                "sha256:b78fe2881323bd44fd9bd76e5317173d4316577e7b1cddebae9136a4495ec865"
+                "sha256:813b99704b22c7d377bbd756ebe56c35252bb710937b46f207100e843440b3c2",
+                "sha256:cc6620b96bc667a0c8d4fa592a8c9c94178a1bd6cc799dbb057dfd9286d31a31"
             ],
             "index": "pypi",
-            "version": "==5.1.2"
+            "version": "==5.1.3"
         },
         "python-dateutil": {
             "hashes": [
@@ -566,6 +566,14 @@
             ],
             "version": "==1.1.0"
         },
+        "tqdm": {
+            "hashes": [
+                "sha256:abc25d0ce2397d070ef07d8c7e706aede7920da163c64997585d42d3537ece3d",
+                "sha256:dd3fcca8488bb1d416aa7469d2f277902f26260c45aa86b667b074cd44b3b115"
+            ],
+            "index": "pypi",
+            "version": "==4.36.1"
+        },
         "wcwidth": {
             "hashes": [
                 "sha256:3df37372226d6e63e1b1e1eda15c594bca98a22d33a23832a90998faa96bc65e",
@@ -575,10 +583,10 @@
         },
         "werkzeug": {
             "hashes": [
-                "sha256:00d32beac38fcd48d329566f80d39f10ec2ed994efbecfb8dd4b320062d05902",
-                "sha256:0a24d43be6a7dce81bae05292356176d6c46d63e42a0dd3f9504b210a9cfaa43"
+                "sha256:7280924747b5733b246fe23972186c6b348f9ae29724135a6dfc1e53cea433e7",
+                "sha256:e5f4a1f98b52b18a93da705a7458e55afb26f32bff83ff5d19189f92462d65c4"
             ],
-            "version": "==0.15.6"
+            "version": "==0.16.0"
         },
         "wheel": {
             "hashes": [
